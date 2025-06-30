@@ -45,18 +45,23 @@ router.get('/user/:id', validateToken, checkUserExist, getOneStore)
 router.put('/logout/:id', validateToken, checkUserExist, async (req, res) => {
     try {
         let { token } = req?.body
-        if (token) {
-            const signInDB = await signInUsers.find({ fcmToken: token })
-            if (signInDB.length > 0) {
-                await signInUsers.findByIdAndUpdate(signInDB[0]._id, { isActive: false }, { new: true })
-                res.json({ message: 'user logged out successfully', success: true })
+
+        const signInDB = await signInUsers.find({ fcmToken: token })
+        if (signInDB.length > 0) {
+            if (signInDB.length > 1) {
+                signInDB.map(async (mobileUser) => {
+                    if (mobileUser.isActive) {
+                        await signInUsers.findByIdAndUpdate(mobileUser?._id, { isActive: false }, { new: true })
+                    }
+                })
             }
             else {
-                res.json({ message: 'something went wrong', success: false })
+                await signInUsers.findByIdAndUpdate(signInDB[0]._id, { isActive: false }, { new: true })
             }
+            res.json({ message: 'user logged out successfully', success: true, db: signInDB })
         }
         else {
-            res.json({ message: 'something went wrong', error: 'required field was missing' })
+            res.json({ message: 'something went wrong', success: false })
         }
     }
     catch (error) {
