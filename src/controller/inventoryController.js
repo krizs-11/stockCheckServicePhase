@@ -267,7 +267,7 @@ const storeInvoice = async (req, res) => {
                     "historyStockCount": totalStockCount
                 };
             });
-            const totalprice = await result?.reduce(
+            const totalprice = result?.reduce(
                 (acc, item) => acc + item['total price'] || 0, 0
             );
             let html = ''
@@ -631,7 +631,7 @@ const storeInvoice = async (req, res) => {
                         </html>`
                 const fileName = `${Date.now()}.pdf`
                 const filePath = path.join("uploads", fileName)
-                const browser = await puppeteer.launch();
+                const browser = await puppeteer.launch({ args: ['--no-sandbox', '--disable-setuid-sandbox'] });
                 const page = await browser.newPage();
 
                 await page.setContent(html);
@@ -649,6 +649,7 @@ const storeInvoice = async (req, res) => {
                     await fs.promises.unlink(filePath);
                     console.log(`File deleted successfully: ${filePath}`);
                 } catch (error) {
+                    res.status(500).json({ message: 'Something went wrong' })
                     console.error(`Error deleting file: ${filePath}`, error);
                 }
                 // Generate PDF
@@ -656,13 +657,12 @@ const storeInvoice = async (req, res) => {
         }
         else {
             res.json({ response: 'NoProducts were found', fileName: '' })
-            console.log("noresponse");
 
         }
     }
     catch (error) {
         console.log("error in order invoice", error);
-
+        res.status(500).json({ message: 'Something went wrong' })
     }
 }
 
